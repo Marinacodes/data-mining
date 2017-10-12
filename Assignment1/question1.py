@@ -15,9 +15,6 @@ X, y = cvt.transform(label)
 clf = DecisionTreeClassifier(criterion='entropy')
 clf.fit(X, y)
 
-print("X[7] is ", X[7])
-print("X[8] is ", X[8])
-
 tree.export_graphviz(clf, out_file='tree.dot')
 dot_data = StringIO() 
 tree.export_graphviz(clf, out_file=dot_data) 
