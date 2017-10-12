@@ -9,26 +9,22 @@ import logging
 import sys
 from time import time
 
-#np.set_printoptions(threshold=np.nan)
-
 class MyBayesClassifier():
-    # For graduate and undergraduate students to implement Bernoulli Bayes
     def __init__(self, smooth = 1):
         self._smooth = smooth # This is for add one smoothing, don't forget!
-        self._feat_prob = []
-        self._class_prob = []
+        self._feat_prob = [] # probability of class given feature
+        self._class_prob = [] # probability of each class
         self._Ncls = []
         self._Nfeat = []
-		
-    def calculate_P_of_class(self, y):
+
+    def train(self, X, y):        
+        # calculate P of class
         unique, counts = np.unique(y, return_counts = True) # unique is [0,1,2,3], counts is [480,584,593,377]
         self._Ncls = len(unique) # self._Ncls is 4 classes
+        self._Nfeat = X.shape[0]
         self._class_prob = counts/len(y) # len(y) is 2034, total number of non-unique classes
-        #print self._class_prob
-        return self._class_prob
 		
-    def calculate_P_of_feature_given_class(self, X, y):
-        unique, counts = np.unique(y, return_counts = True) # unique is [0,1,2,3], counts is [480,584,593,377]
+        # calculate P of feature given class
         # create new array of fixed size equal to number of classes
         spliton = [None] * (len(unique) - 1)
         # determine where the data get split up by each unique type
@@ -48,22 +44,10 @@ class MyBayesClassifier():
         for i in range(0, len(unique)):
             cls_arrs[i] = np.delete(cls_arrs[i], np.s_[-1], axis = 1)
             cls_arrs[i] = cls_arrs[i].sum(axis = 0)
-        # print class arrays
-        for i in range(0, len(unique)):
-            print cls_arrs[i]
-        print self._feat_prob
-        return self._feat_prob
-
-    def train(self, X, y):
-        # Your code goes here.
-        self.calculate_P_of_class(y)	
-        self.calculate_P_of_feature_given_class(X, y)
-        return
+        self._feat_prob = np.true_divide(np.add(cls_arrs, self._smooth), np.sum(cls_arrs) + self._Nfeat * self._smooth)
 
     def predict(self, X):
-        # This is just a place holder so that the code still runs.
-        # Your code goes here.
-        return np.zeros([X.shape[0],1])
+        
 
 """ 
 Here is the calling code
