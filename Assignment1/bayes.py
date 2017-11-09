@@ -11,18 +11,18 @@ from time import time
 
 class MyBayesClassifier():
     def __init__(self, smooth = 1):
-        self._smooth = smooth # This is for add one smoothing, don't forget!
+        self._smooth = smooth # add one smoothing
         self._feat_prob = [] # probability of class given feature
         self._class_prob = [] # probability of each class
-        self._Ncls = []
-        self._Nfeat = []
+        self._Ncls = [] # number of classes
+        self._Nfeat = [] # number of features
 
     def train(self, X, y):        
         # calculate P of class
-        unique, counts = np.unique(y, return_counts = True) # unique is [0,1,2,3], counts is [480,584,593,377]
-        self._Ncls = len(unique) # self._Ncls is 4 classes
+        unique, counts = np.unique(y, return_counts = True) 
+        self._Ncls = len(unique) 
         self._Nfeat = X.shape[0]
-        self._class_prob = counts/len(y) # len(y) is 2034, total number of non-unique classes
+        self._class_prob = counts/len(y)
 		
         # calculate P of feature given class
         # create new array of fixed size equal to number of classes
@@ -31,7 +31,7 @@ class MyBayesClassifier():
         spliton[0] = counts[0]
         for i in range(1, len(unique) - 1):
             spliton[i] = counts[i] + spliton[i - 1]
-        self._Nfeat = len(X[0]) #self._Nfeat is 26576
+        self._Nfeat = len(X[0]) 
         # orient class array verically
         vert_y = np.vstack(y)
         # append class array to sample/feature array
@@ -44,10 +44,30 @@ class MyBayesClassifier():
         for i in range(0, len(unique)):
             cls_arrs[i] = np.delete(cls_arrs[i], np.s_[-1], axis = 1)
             cls_arrs[i] = cls_arrs[i].sum(axis = 0)
+        # calculate the probability that a feature belongs to a class
         self._feat_prob = np.true_divide(np.add(cls_arrs, self._smooth), np.sum(cls_arrs) + self._Nfeat * self._smooth)
 
     def predict(self, X):
-        
+        # create new array of fixed size equal to number of classes to store predictions in
+        pred = [None] * len(X)
+        # determine class 
+        for row_num, row_contents in enumerate(X):
+            pred[row_num] = self.determine_class(row_contents, self._feat_prob)
+        return pred
+
+    def determine_class(self, row_contents, feat_prob):
+        # create new feature probability array
+        feat_prob_not = np.empty((self._Ncls, self._Nfeat))
+        # copy feature probability array into a new feature probability array
+        feat_prob_not = np.copy(self._feat_prob)
+        # create array of probabilities
+        p = []
+        # calculate probabilities
+        for i in range(0, self._Ncls):
+            feat_prob_not[i][row_contents == 0] = 1 - feat_prob[i][row_contents == 0]
+            p.append(np.add(np.log(self._class_prob[i]), np.sum(np.log(feat_prob_not[i]))))
+        # find the highest probability
+        return np.argmax(p)
 
 """ 
 Here is the calling code
@@ -88,4 +108,3 @@ clf = MyBayesClassifier(alpha)
 clf.train(X_train, y_train)
 y_pred = clf.predict(X_test)
 print 'alpha=%i accuracy = %f' %(alpha, np.mean((y_test-y_pred) == 0))
-
